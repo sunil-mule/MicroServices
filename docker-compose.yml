@@ -1,0 +1,40 @@
+services:
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  user-service:
+    build: ./user-service
+    environment:
+      MONGO_URI: mongodb://mongo:27017/users_db
+    depends_on: [mongo]
+
+  product-service:
+    build: ./product-service
+    environment:
+      MONGO_URI: mongodb://mongo:27017/products_db
+    depends_on: [mongo]
+
+  order-service:
+    build: ./order-service
+    environment:
+      MONGO_URI: mongodb://mongo:27017/orders_db
+      USER_SERVICE_URL: http://user-service:3001
+      PRODUCT_SERVICE_URL: http://product-service:3002
+    depends_on: [mongo, user-service, product-service]
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      USER_SERVICE_URL: http://user-service:3001
+      PRODUCT_SERVICE_URL: http://product-service:3002
+      ORDER_SERVICE_URL: http://order-service:3003
+    depends_on: [user-service, product-service, order-service]
+
+volumes:
+  mongo-data:
